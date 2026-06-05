@@ -17,36 +17,48 @@ class ConvertHandler {
       mi: "miles",
       km: "kilometers",
     };
-
-    this.toLowerUnit = (unit) => {
-      if (unit === "L") return "L";
-      return unit.toLowerCase();
-    };
   }
 
   getNum(input) {
-    const result = input.match(/^[\d./]*/)[0];
+    const numPart = input.match(/^[\d./]+/)?.[0];
 
-    if (!result) return 1;
+    // no number → default 1
+    if (!numPart) return 1;
 
-    if (result.includes("/")) {
-      const parts = result.split("/");
-      if (parts.length !== 2) return "invalid number";
-      return parseFloat(parts[0]) / parseFloat(parts[1]);
+    // multiple slashes → invalid
+    if ((numPart.match(/\//g) || []).length > 1) {
+      return "invalid number";
     }
 
-    return parseFloat(result);
+    if (numPart.includes("/")) {
+      const [a, b] = numPart.split("/");
+
+      if (!a || !b || isNaN(a) || isNaN(b)) {
+        return "invalid number";
+      }
+
+      return parseFloat(a) / parseFloat(b);
+    }
+
+    // invalid cases like "." or "/"
+    if (isNaN(numPart)) return "invalid number";
+
+    return parseFloat(numPart);
   }
 
   getUnit(input) {
-    const match = input.match(/[a-zA-Z]+/g);
-    if (!match) return "invalid unit";
+    const unitMatch = input.match(/[a-zA-Z]+$/);
 
-    let unit = match.join("");
+    if (!unitMatch) return "invalid unit";
 
-    unit = unit === "l" || unit === "L" ? "L" : unit.toLowerCase();
+    let unit = unitMatch[0];
 
-    const valid = ["gal", "L", "lbs", "kg", "mi", "km"];
+    // handle liter
+    if (unit.toLowerCase() === "l") return "L";
+
+    unit = unit.toLowerCase();
+
+    const valid = ["gal", "lbs", "kg", "mi", "km"];
 
     if (!valid.includes(unit)) return "invalid unit";
 
